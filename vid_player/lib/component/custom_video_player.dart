@@ -26,6 +26,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   VideoPlayerController? videoController;
   bool showControls = false;
   VideoRenderingMode _renderingMode = VideoRenderingMode.aspectRatio;
+  bool _isFlippedHorizontally = false;
+  bool _isFlippedVertically = false;
+
 
   @override
   // covariant 키워드는 CustomVideoPlayer 클래스의 상속된 값도 허가해줍니다.
@@ -131,21 +134,45 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
               ),
             ),
           if(showControls)
-            CustomIconButton(
-              onPressed: () {
-                setState(() {
-                  _renderingMode = VideoRenderingMode.values[(_renderingMode.index + 1) % VideoRenderingMode.values.length];
-                });
-              },
-              iconData: Icons.aspect_ratio, // You can choose an icon that best represents changing the rendering mode
+            SafeArea(
+            child: Align(
+              // ➊ 오른쪽 위에 새 동영상 아이콘 위치
+                alignment: Alignment.topCenter,
+                child: CustomIconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isFlippedHorizontally = !_isFlippedHorizontally;
+                    });
+                  },
+                  iconData: Icons.flip_camera_ios, // Use an appropriate icon
+                ),
+              ),
+            ),
+
+          if(showControls)
+            SafeArea(
+              child: Align(
+                // ➊ 오른쪽 위에 새 동영상 아이콘 위치
+                alignment: Alignment.topLeft,
+                child: CustomIconButton(
+                  onPressed: () {
+                    setState(() {
+                      _renderingMode = VideoRenderingMode.values[(_renderingMode.index + 1) % VideoRenderingMode.values.length];
+                    });
+                  },
+                  iconData: Icons.aspect_ratio, // You can choose an icon that best represents changing the rendering mode
+                ),
+              ),
             ),
             if(showControls)
-              Align(
-                // ➊ 오른쪽 위에 새 동영상 아이콘 위치
-                alignment: Alignment.topRight,
-                child: CustomIconButton(
-                  onPressed: widget.onNewVideoPressed,
-                  iconData: Icons.photo_camera_back,
+              SafeArea(
+                child: Align(
+                  // ➊ 오른쪽 위에 새 동영상 아이콘 위치
+                  alignment: Alignment.topRight,
+                  child: CustomIconButton(
+                    onPressed: widget.onNewVideoPressed,
+                    iconData: Icons.photo_camera_back,
+                  ),
                 ),
               ),
             if (showControls)
@@ -187,7 +214,24 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   }
 
   Widget _buildVideoPlayer() {
-    final videoPlayerWidget = VideoPlayer(videoController!);
+    Matrix4 matrix = Matrix4.identity();
+
+    // Apply horizontal flip if needed
+    if (_isFlippedHorizontally) {
+      matrix = matrix.scaled(-1.0, 1.0, 1.0);
+    }
+
+    // Apply vertical flip if needed
+    if (_isFlippedVertically) {
+      matrix = matrix.scaled(1.0, -1.0, 1.0);
+    }
+
+    final videoPlayerWidget = Transform(
+      transform: matrix,
+      alignment: Alignment.center,
+      child: VideoPlayer(videoController!),
+    );
+
     switch (_renderingMode) {
       case VideoRenderingMode.aspectRatio:
         // Wrapped with Center to ensure it's centered
@@ -226,9 +270,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
 
   Widget renderTimeTextFromDuration(Duration duration) {
     return Text(
-      '${duration.inHours.toString().padLeft(2, '0')}:'
+          '${duration.inHours.toString().padLeft(2, '0')}:'
           '${duration.inMinutes.toString().padLeft(2, '0')}:'
-          '${(duration.inSeconds % 60).toString().padLeft(2, '0')}',
+          '${(duration.inSeconds % 60).toString().padLeft(2, '0')}:',
       style: TextStyle(
         color: Colors.white,
       ),
@@ -275,7 +319,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   }
   void onChangeSpeedPressed() async {
     // Define a list of playback speeds
-    final List<double> speeds = [0.5, 1.0, 1.5, 2.0];
+    final List<double> speeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
     // Show dialog to select speed
     final selectedSpeed = await showDialog<double>(
