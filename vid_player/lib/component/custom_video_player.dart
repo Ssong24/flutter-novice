@@ -172,6 +172,10 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                       onPressed: onForwardPressed,
                       iconData: Icons.rotate_right,
                     ),
+                    CustomIconButton( // Speed control button
+                      onPressed: () => onChangeSpeedPressed(),
+                      iconData: Icons.speed,
+                    ),
                   ],
                 ),
               ),
@@ -267,6 +271,34 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
       videoController!.pause();
     } else {
       videoController!.play();
+    }
+  }
+  void onChangeSpeedPressed() async {
+    // Define a list of playback speeds
+    final List<double> speeds = [0.5, 1.0, 1.5, 2.0];
+
+    // Show dialog to select speed
+    final selectedSpeed = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Select Playback Speed"),
+        content: Container(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: speeds.length,
+            itemBuilder: (context, index) => ListTile(
+              title: Text("${speeds[index]}x"),
+              onTap: () => Navigator.pop(context, speeds[index]), // Return the selected speed
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // If a speed was selected, set the playback speed
+    if (selectedSpeed != null) {
+      videoController!.setPlaybackSpeed(selectedSpeed);
     }
   }
 }
